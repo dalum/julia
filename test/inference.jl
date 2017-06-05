@@ -829,13 +829,6 @@ end
 @test length(code_typed(test_20902, (), optimize = false)) == 1
 @test length(code_typed(test_20902, (), optimize = false)) == 1
 
-# normalization of arguments with constant Types as parameters
-g21771(T) = T
-f21771(::Val{U}) where {U} = Tuple{g21771(U)}
-@test @inferred(f21771(Val{Int}())) === Tuple{Int}
-@test @inferred(f21771(Val{Union{}}())) === Tuple{Union{}}
-@test @inferred(f21771(Val{Integer}())) === Tuple{Integer}
-
 # issue #21653
 # ensure that we don't try to resolve cycles using uncached edges
 f21653() = f21653()

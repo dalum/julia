@@ -512,7 +512,7 @@ typeemphasize(io::IO) = get(io, :TYPEEMPHASIZE, false) === true
 
 const indent_width = 4
 
-function show_expr_type(io::IO, ty::ANY, emph::Bool)
+function show_expr_type(io::IO, ty, emph)
     if ty === Function
         print(io, "::F")
     elseif ty === Core.IntrinsicFunction
@@ -617,7 +617,7 @@ function show_unquoted(io::IO, ex::Slot, ::Int, ::Int)
         if isa(slottypes, Array) && slotid <= length(slottypes::Array)
             slottype = slottypes[slotid]
             # The Slot in assignment can somehow have an Any type
-            if isa(slottype, Type) && isa(typ, Type) && slottype <: typ
+            if slottype <: typ
                 typ = slottype
             end
         end
