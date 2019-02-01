@@ -1531,11 +1531,7 @@
           (list 'module (if (eq? word 'module) 'true 'false) name
                 `(block ,loc ,@(cdr body)))))
        ((export)
-        (let ((es (map macrocall-to-atsym
-                       (parse-comma-separated s parse-unary-prefix))))
-          (if (not (every symbol-or-interpolate? es))
-              (error "invalid \"export\" statement"))
-          `(export ,@es)))
+        (parse-export s))
        ((import using)
         (parse-imports s word))
        ((do)
@@ -1612,6 +1608,45 @@
                     path)))
        (else
         (cons '|.| (reverse path)))))))
+
+(define (parse-export s)
+  (let ((head (peek-token s)))
+        (case head
+          ((function const)
+           (parse-export-def s))
+          ((macro)
+           (parse-export-macro s))
+          (else
+           (let ((es (parse-eq s)))
+             (if (and (pair? es)
+                      (eq? (car es) '=))
+                 (parse-export-assignment es head)
+                 (parse-export-fallback es)))))))
+
+(define (parse-export-fallback es)
+  (if (not (or (eq? (car es) 'tuple)
+               (every symbol-or-interpolate? (cdr es))))
+      (error "invalid \"export\" statement")
+      `(export ,@(cdr es))))
+
+(define (parse-export-assignment assgn name)
+  (begin `(block
+           (export ,name)
+           ,assgn)))
+
+(define (parse-export-def s)
+  (let ((word (take-token s))
+        (name (macrocall-to-atsym (peek-token s))))
+    (begin `(block
+             (export ,name)
+             ,(parse-resword s word)))))
+
+(define (parse-export-macro s)
+  (let ((head (take-token s))
+        (name (macrocall-to-atsym (peek-token s))))
+    (begin `(block
+             (export ,(macroify-name name))
+             ,(parse-resword s head)))))
 
 ;; parse comma-separated assignments, like "i=1:n,j=1:m,..."
 (define (parse-comma-separated s what)
